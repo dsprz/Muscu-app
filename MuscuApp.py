@@ -210,9 +210,9 @@ class WorkingSession(QWidget):
         self.setGeometry(400, 200, 1080, 640) #prendre res user
         self.setFixedHeight(640)
 
-        self.horizontalLayout1 = QHBoxLayout(self)
+        self.horizontalLayout1 = QHBoxLayout()
         self.setLayout(self.horizontalLayout1)
-        self.verticalLayout = QVBoxLayout(self)
+        self.verticalLayout = QVBoxLayout()
 
         self.formLayout = QFormLayout()
 
@@ -264,7 +264,7 @@ class WorkingSession(QWidget):
     def showExerciseInfos(self, clickedItem):
         """Crée et affiche tout un exercice"""
         self.exerciseNumber+=1
-        self.gridLayout = QGridLayout(self)
+        self.gridLayout = QGridLayout()
         self.gridLayout.setVerticalSpacing(10)
         nb = self.exerciseNumber
 
@@ -502,9 +502,9 @@ class EditSession(QWidget):
         self.setGeometry(400, 200, 1080, 640) #prendre res user
         self.setFixedHeight(640)
 
-        self.horizontalLayout1 = QHBoxLayout(self)
+        self.horizontalLayout1 = QHBoxLayout()
         self.setLayout(self.horizontalLayout1)
-        self.verticalLayout = QVBoxLayout(self)
+        self.verticalLayout = QVBoxLayout()
 
         self.formLayout = QFormLayout()
 
@@ -515,6 +515,9 @@ class EditSession(QWidget):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.groupBox)
         self.verticalLayout.addWidget(self.scrollArea)
+
+        self.sessions = QListWidget()
+
 
         self.deleteExerciseButtonIcon = QtGui.QPixmap(redCrossSignPath)
         self.deleteExerciseButtonIcon.setMask(self.deleteExerciseButtonIcon.createMaskFromColor(QtGui.QColor(0, 255, 0)))
@@ -529,11 +532,14 @@ class EditSession(QWidget):
         self.addSeriesButtonExerciseNumberIcon.setMask(self.addSeriesButtonExerciseNumberIcon.createMaskFromColor(QtGui.QColor(255, 0, 0)))
         self.addSeriesButtonExerciseNumberIcon = QtGui.QIcon(self.addSeriesButtonExerciseNumberIcon)
 
-        self.excelManager = ExcelManager()
+        self.emptyLabel = QLabel(self)
         self.createSessionsList()
+        self.horizontalLayout1.addWidget(self.sessions, 0, QtCore.Qt.AlignLeft)
+        self.horizontalLayout1.addWidget(self.emptyLabel, 0, QtCore.Qt.AlignLeft)
+
         self.horizontalLayout1.addLayout(self.verticalLayout)
         self.exerciseNumber = 0
-        self.printExcelDatabase()
+        #self.printExcelDatabase()
         self.exercise = []
         self.allExercises = []
 
@@ -544,46 +550,50 @@ class EditSession(QWidget):
 
     def createSessionsList(self):
         """Crée la QComboBox qui contient toutes les sessions"""
-        self.excelManagerDateList = self.excelManager.getDateList()
-        allSessionsList = [self.excelManagerDateList[i] for i in range(len(self.excelManagerDateList)-1) if i%2==0]
-        self.emptyLabel = QLabel(self)
+        excelManager = ExcelManager()
+        excelManagerDateList = excelManager.getDateList()
+        allSessionsList = [excelManagerDateList[i] for i in range(len(excelManagerDateList)-1) if i%2==0]
         sizeToBeAdded = 50
         self.allSessionsItems = sorted(allSessionsList)
-        self.sessions = QListWidget()
         for index, value in enumerate(allSessionsList):
             self.sessions.insertItem(index, value)
         self.sessions.setMaximumWidth(self.sessions.sizeHintForColumn(0) + sizeToBeAdded)
-        self.horizontalLayout1.addWidget(self.sessions)
-        self.horizontalLayout1.addWidget(self.emptyLabel, 0, QtCore.Qt.AlignLeft)
         self.sessions.itemClicked.connect(lambda: self.showSessionInfos(self.sessions.currentRow()))
     
     def showSessionInfos(self, index):
         """Affiche tous les exercices d'une séance"""
-        #print(exercise)
+        excelManager = ExcelManager()
         self.currentSession = index
-        print(self.currentSession)
         self.clearWindow()
-        self.allSessions = self.excelManager.getWorkoutSessionList()
+        self.allSessions = excelManager.getWorkoutSessionList()
         self.workoutSessionList = self.allSessions[index]
         for exercise in self.workoutSessionList:
-            self.exerciseNumber+=1
-            self.gridLayout = QGridLayout(self)
+            self.gridLayout = QGridLayout()
             self.gridLayout.setVerticalSpacing(10)
             exerciseName = exercise[0]
+            self.showExerciseInfos(exercise, exerciseName)
+            #getattr(self,f"deleteExerciseButton{exercise}").clicked.connect(lambda : self.removeExercise(nb))
+        #layout.addWidget(getattr(self,f"addSeriesButtonExerciseNumber{exerciseNumber}"), rowForNewButton + 1, 0, 1, 1)
+        self.verticalLayout.setAlignment(QtCore.Qt.AlignTop)
+    
+    def showExerciseInfos(self, exercise, exerciseName):
+            self.exerciseNumber+=1
+            nb = self.exerciseNumber
             numberOfSeries = len(exercise[1])
             row = 1
             while row <= numberOfSeries:
                 self.exercise.append(self.createSeries(self.gridLayout, row, exerciseName, exercise))
                 row+=1
-            setattr(self,f"deleteExerciseButton{self.exerciseNumber}", QPushButton(self))
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setIcon(self.deleteExerciseButtonIcon)
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setIconSize(QtCore.QSize(self.buttonIconSize, 
+            setattr(self,f"deleteExerciseButton{nb}", QPushButton(self))
+            getattr(self,f"deleteExerciseButton{nb}").setIcon(self.deleteExerciseButtonIcon)
+            getattr(self,f"deleteExerciseButton{nb}").setIconSize(QtCore.QSize(self.buttonIconSize, 
                                                                             self.buttonIconSize))
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setStyleSheet("QPushButton{background: transparent;}")
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setGeometry(5, 5, self.buttonIconSize, self.buttonIconSize)
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-            deleteText = f"Supprimer l'exercice {self.exerciseNumber}"
-            getattr(self,f"deleteExerciseButton{self.exerciseNumber}").setToolTip(deleteText)
+            getattr(self,f"deleteExerciseButton{nb}").setStyleSheet("QPushButton{background: transparent;}")
+            getattr(self,f"deleteExerciseButton{nb}").setGeometry(5, 5, self.buttonIconSize, self.buttonIconSize)
+            getattr(self,f"deleteExerciseButton{nb}").setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+            deleteText = f"Supprimer l'exercice {nb}"
+            getattr(self,f"deleteExerciseButton{nb}").setToolTip(deleteText)
+            getattr(self,f"deleteExerciseButton{nb}").clicked.connect(lambda : self.removeExercise(nb, self.currentSession))
 
             setattr(self,f"addSeriesButtonExerciseNumber{self.exerciseNumber}", QPushButton(self))
             getattr(self,f"addSeriesButtonExerciseNumber{self.exerciseNumber}").setIcon(self.addSeriesButtonExerciseNumberIcon)
@@ -600,13 +610,27 @@ class EditSession(QWidget):
             self.gridLayout.addWidget(getattr(self,f"deleteExerciseButton{self.exerciseNumber}"), 0, 3, 2, 1)
             self.formLayout.addRow(self.gridLayout)
 
+    
+    def removeExercise(self, exerciseNumber, session):
+        print(exerciseNumber)
+        layoutToBeCleared = self.allExercises[exerciseNumber-1][-1][-1]
 
-            #getattr(self,f"deleteExerciseButton{exercise}").clicked.connect(lambda : self.removeExercise(nb))
+        self.formLayout.takeRow(exerciseNumber-1)
+        for i in reversed(range(layoutToBeCleared.count())):
+            layoutToBeCleared.itemAt(i).widget().setParent(None)
 
 
+        for j in range(exerciseNumber, len(self.allExercises)):
+            getattr(self,f"deleteExerciseButton{j+1}").setParent(None)
+            self.allExercises[j][-1][-1].addWidget(getattr(self,f"deleteExerciseButton{j}"), 0, 3, 2, 1)
+        
+        self.allSessions[session].pop(exerciseNumber-1)
+        print(self.allSessions)
 
-        #layout.addWidget(getattr(self,f"addSeriesButtonExerciseNumber{exerciseNumber}"), rowForNewButton + 1, 0, 1, 1)
-        self.verticalLayout.setAlignment(QtCore.Qt.AlignTop)
+        #print(f"je vais enlever le {exerciseNumber-1}e indice alors qu'il y en a {len(self.allExercises)-1}")
+
+        self.allExercises.remove(self.allExercises[exerciseNumber-1])
+        self.exerciseNumber-=1
     
     def createSeries(self, layout, row, exerciseName, exercise):
         """Crée une row-ème série d'un exercice"""
@@ -735,15 +759,16 @@ class EditSession(QWidget):
             sessions[3] = allMasses[sessionIndex]
             sessionIndex+=1
         print(self.allSessions[index])
+        self.entireExerciseDeleted = self.allSessions[index] == []
+        if self.entireExerciseDeleted:
+            self.allSessions.pop(index)
+
 
         #print(allMasses)
         #self.allSessions[index][0][2] = allRepetiions
         #self.allSessions[index][0][3] = allMasses
         #self.allSessions[index][0] = self.allSessions[index][0]
         #print(self.allSessions[index][0])
-
-
-            
     
     def formatAllSessions(self):
         self.allExercisesfromAllSessions = []
@@ -772,7 +797,6 @@ class EditSession(QWidget):
         #print(self.allExercisesfromAllSessions)
 
     def sendToExcel(self, index):
-        print(index)
         if index == None:
             return
         self.updateSession(index)
@@ -782,6 +806,10 @@ class EditSession(QWidget):
         
         for index, dataframe in enumerate(self.allExercisesfromAllSessions):
             excelManager.writeInExcel(dataframe, self.numberOfExercisesNumber[index], "w" if index == 0 else "a")
+        if self.entireExerciseDeleted:
+            self.allSessions = []
+            self.sessions.clear()
+            self.createSessionsList()
         
     def getCurrentSession(self):
         return self.currentSession
